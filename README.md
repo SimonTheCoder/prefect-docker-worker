@@ -106,6 +106,18 @@ The GitHub Actions workflow (`.github/workflows/build-and-push.yml`) is **manual
 
 It resolves the latest Prefect version from PyPI, builds the image, and pushes it to `ghcr.io` tagged with that version.
 
+## Disclaimer
+
+**USE AT YOUR OWN RISK.**
+
+This project is provided "as is", without warranty of any kind, express or implied, including but not limited to the warranties of merchantability, fitness for a particular purpose, and non-infringement.
+
+- The author(s) and contributor(s) of this repository **accept no responsibility or liability** for any damages, data loss, security breaches, service disruption, or other harm — direct, indirect, incidental, or consequential — arising from the use, misuse, or inability to use this project or its container images.
+- Running this worker with host Docker socket access carries **serious security implications** (see the warning above). You are solely responsible for evaluating those risks, securing your environment, and deciding whether this approach is appropriate for your use case.
+- This project is **not affiliated with, endorsed by, or supported by Prefect Technologies, Inc.** "Prefect" is a trademark of its respective owner and is used here for descriptive purposes only.
+- No guarantee is made regarding correctness, security, or continued maintenance. Container images may contain upstream vulnerabilities at any point in time; you are responsible for scanning and patching as needed.
+- By using this project, you acknowledge that you have read and understood this disclaimer and accept full responsibility for your use of it.
+
 ## License
 
 MIT
