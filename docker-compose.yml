@@ -10,6 +10,11 @@ services:
       - PREFECT_UI_URL=${PREFECT_UI_URL:-}
       - PREFECT_WORKER_NAME=${PREFECT_WORKER_NAME:-docker-worker}
       - PREFECT_WORK_POOL_NAME=${PREFECT_WORK_POOL_NAME:-default}
+    # SELinux hosts (RHEL/Fedora/CentOS): the container must be allowed to
+    # connectto the Docker socket (container_runtime_t). A ':z' relabel is not
+    # sufficient for socket connection; disabling the label is required.
+    security_opt:
+      - label=disable
     volumes:
       # ⚠️ Grants full control of the host Docker daemon to this container
       - /var/run/docker.sock:/var/run/docker.sock

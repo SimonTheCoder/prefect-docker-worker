@@ -73,6 +73,35 @@ docker run -d \
   ghcr.io/<owner>/prefect-docker-worker:<prefect-version>
 ```
 
+### SELinux hosts (RHEL / Fedora / CentOS / Rocky)
+
+On SELinux-enabled hosts (`getenforce` returns `Enforcing`), mounting the socket
+with `:z` is **not** enough — the container is still denied `connectto` on the
+`unix_stream_socket` (AVC: `container_t` → `container_runtime_t`). You will see:
+
+```
+RuntimeError: Could not connect to Docker.
+... PermissionError: [Errno 13] Permission denied
+```
+
+Fix it by disabling the SELinux label for this one container:
+
+```yaml
+services:
+  prefect-docker-worker:
+    security_opt:
+      - label=disable
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+```
+
+Or with the CLI: add `--security-opt label=disable`.
+
+> `label=disable` removes SELinux confinement for this container. Since it
+already has full control of the Docker daemon, this is not a meaningful
+additional exposure — but it is the reason the isolated-host mitigations above
+matter.
+
 ## Configuration
 
 | Variable | Default | Description |
