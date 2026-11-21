@@ -22,9 +22,12 @@ COPY --from=builder /opt/venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH" \
     VIRTUAL_ENV="/opt/venv"
 
-# Prefect default env vars (override at runtime)
+# Real Prefect settings (recognized natively)
 ENV PREFECT_API_URL="" \
-    PREFECT_WORKER_NAME="docker-worker" \
+    PREFECT_UI_URL=""
+
+# Custom vars expanded by CMD shell (NOT native Prefect settings)
+ENV PREFECT_WORKER_NAME="docker-worker" \
     PREFECT_WORK_POOL_NAME="default"
 
-CMD ["sh", "-c", "prefect worker start --pool ${PREFECT_WORK_POOL_NAME} --type docker"]
+CMD ["sh", "-c", "prefect worker start --pool ${PREFECT_WORK_POOL_NAME} --name ${PREFECT_WORKER_NAME} --type docker"]

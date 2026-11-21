@@ -7,6 +7,7 @@ services:
         PREFECT_VERSION: ${PREFECT_VERSION:-latest}
     environment:
       - PREFECT_API_URL=${PREFECT_API_URL}
+      - PREFECT_UI_URL=${PREFECT_UI_URL:-}
       - PREFECT_WORKER_NAME=${PREFECT_WORKER_NAME:-docker-worker}
       - PREFECT_WORK_POOL_NAME=${PREFECT_WORK_POOL_NAME:-default}
     volumes:
