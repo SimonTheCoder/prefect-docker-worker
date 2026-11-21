@@ -27,4 +27,4 @@ ENV PREFECT_API_URL="" \
     PREFECT_WORKER_NAME="docker-worker" \
     PREFECT_WORK_POOL_NAME="default"
 
-CMD ["prefect", "worker", "start", "--type", "docker"]
+CMD ["sh", "-c", "prefect worker start --pool ${PREFECT_WORK_POOL_NAME} --type docker"]
