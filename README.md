@@ -106,9 +106,63 @@ matter.
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `PREFECT_API_URL` | *(required)* | URL of your Prefect server or Cloud workspace API |
-| `PREFECT_WORKER_NAME` | `docker-worker` | Name of this worker instance |
-| `PREFECT_WORK_POOL_NAME` | `default` | Work pool to register with |
+| `PREFECT_API_URL` | *(required)* | URL of your Prefect server or Cloud workspace API. Native Prefect setting. |
+| `PREFECT_UI_URL` | *(empty)* | Public UI URL used in links. Native Prefect setting. |
+| `PREFECT_WORKER_NAME` | `docker-worker` | Worker name. **Not** a native setting — expanded by the shell into `--name`. |
+| `PREFECT_WORK_POOL_NAME` | `default` | Work pool to poll. **Not** a native setting — expanded by the shell into `--pool`. |
+
+## Networking: spawned containers must reach the server
+
+The worker talks to the Docker daemon over the mounted socket and creates a
+**new container per flow run**. Those containers are, by default, attached to
+Docker's default `bridge` network — **not** the network your Prefect server is
+on. If `PREFECT_API_URL` uses a Docker-internal hostname (e.g.
+`http://prefect-server:4200/api`), the spawned container cannot resolve it and
+the run crashes with:
+
+```
+httpx.ConnectError: [Errno -2] Name or service not known
+... Flow run infrastructure exited with non-zero status code 1
+```
+
+Fix it by telling the worker which network(s) to attach spawned containers to.
+This is a **work-pool / deployment setting on the server**, not part of this
+image.
+
+**Option A — set the pool default** (applies to all deployments on the pool):
+
+```python
+import asyncio
+from prefect.client.orchestration import get_client
+from prefect.client.schemas.actions import WorkPoolUpdate
+
+async def main():
+    async with get_client() as c:
+        pool = await c.read_work_pool("my-docker-pool")
+        tpl = pool.base_job_template
+        tpl["variables"]["properties"]["networks"]["default"] = ["prefect_prefect"]
+        await c.update_work_pool(
+            "my-docker-pool", work_pool=WorkPoolUpdate(base_job_template=tpl)
+        )
+
+asyncio.run(main())
+```
+
+> Use the **actual** Docker network name. With Compose it is
+> `<project>_<network>` (e.g. project `prefect` + network `prefect` →
+> `prefect_prefect`). Check with `docker network ls`.
+
+**Option B — set it per deployment** via job variables:
+
+```python
+deployment.job_variables["networks"] = ["prefect_prefect"]
+```
+
+**Option C — make the API URL resolvable from `bridge`**, e.g. point
+`PREFECT_API_URL` at the host's published port
+(`http://<host-ip>:4200/api`) or `http://host.docker.internal:4200/api`
+(add `--add-host=host.docker.internal:host-gateway` to spawned containers via
+the pool's `extra_hosts` job variable).
 
 ## How It Works
 
