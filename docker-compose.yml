@@ -1,0 +1,12 @@
+services:
+  prefect-docker-worker:
+    build: .
+    image: prefect-docker-worker:latest
+    environment:
+      - PREFECT_API_URL=${PREFECT_API_URL}
+      - PREFECT_WORKER_NAME=${PREFECT_WORKER_NAME:-docker-worker}
+      - PREFECT_WORK_POOL_NAME=${PREFECT_WORK_POOL_NAME:-default}
+    volumes:
+      # Mount host's Docker socket so the worker can manage containers
+      - /var/run/docker.sock:/var/run/docker.sock
+    restart: unless-stopped

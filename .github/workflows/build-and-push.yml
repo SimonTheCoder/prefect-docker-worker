@@ -1,0 +1,57 @@
+name: Build & Push to GHCR
+
+on:
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Resolve latest Prefect version
+        id: prefect-version
+        run: |
+          VERSION=$(curl -s https://pypi.org/pypi/prefect/json | python3 -c "import sys,json; print(json.load(sys.stdin)['info']['version'])")
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "Building with Prefect ${VERSION}"
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=sha,prefix=sha-
+            type=raw,value=${{ steps.prefect-version.outputs.version }}
+
+      - name: Build and push image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            PREFECT_VERSION=${{ steps.prefect-version.outputs.version }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
